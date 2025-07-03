@@ -33,5 +33,5 @@ while len(basicfood) < 214:
             break
 
         page += 1
-connection.commit()
+#connection.commit()
 connection.close()
