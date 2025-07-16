@@ -29,6 +29,43 @@ def get_foods():
     foods = [dict(row) for row in rows]
     return jsonify(foods)
 
+def register(username,password):
+    connection = sqlite3.connect('users.db')
+    cursor = connection.cursor()
+    cursor.execute("select * from users where username = ?", (username,))
+    if cursor.fetchone():
+        print("Username already exists")
+        connection.close()
+        return
+    cursor.execute("insert into users (username, password) values (?,?)", (username,password))
+    connection.commit()
+    connection.close()
+    print("Registered successfully")
+
+def login(username,password):
+    connection = sqlite3.connect('users.db')
+    cursor = connection.cursor()
+    cursor.execute("select * from users where username = ? and password=?", (username,password))
+    if cursor.fetchone():
+        print("Login Successful")
+    else:
+        print("Login Failed")
+    connection.close()
+
+def deleteuser(adminusername,adminpassword,user):
+    if adminusername!="admin":
+        print("Only admin can delete users")
+    connection=sqlite3.connect('users.db')
+    cursor=connection.cursor()
+    cursor.execute("select * from users where username = ? and password=?", (adminusername,adminpassword))
+    if not cursor.fetchone():
+        print("Admin authentication failed")
+        connection.close()
+        return
+    cursor.execute("delete from users where username = ?", (user,))
+    connection.commit()
+    connection.close()
+    print(f"User '{user}' deleted successfully")
 
 #start server
 if __name__ == '__main__':
