@@ -55,6 +55,7 @@ def login(username,password):
 def deleteuser(adminusername,adminpassword,user):
     if adminusername!="admin":
         print("Only admin can delete users")
+        return
     connection=sqlite3.connect('users.db')
     cursor=connection.cursor()
     cursor.execute("select * from users where username = ? and password=?", (adminusername,adminpassword))
@@ -62,10 +63,40 @@ def deleteuser(adminusername,adminpassword,user):
         print("Admin authentication failed")
         connection.close()
         return
+
+    cursor.execute("select * from users where username = ?", (user,))
+    if not cursor.fetchone():
+        print(f"User '{user}' does not exist")
+        connection.close()
+        return
+
     cursor.execute("delete from users where username = ?", (user,))
     connection.commit()
     connection.close()
     print(f"User '{user}' deleted successfully")
+
+def adminadduser(adminusername,adminpassword,userN,userPW):
+    if adminusername!="admin":
+        print("Only admin can add users")
+        return
+    connection=sqlite3.connect('users.db')
+    cursor=connection.cursor()
+    cursor.execute("select * from users where username = ? and password=?", (adminusername,adminpassword))
+    if not cursor.fetchone():
+        print("Admin authentication failed")
+        connection.close()
+        return
+
+    cursor.execute("select * from users where username = ?", (userN,))
+    if cursor.fetchone():
+        print("Username already exists")
+        connection.close()
+        return
+
+    cursor.execute("insert into users (username,password) values(?, ?)", (userN,userPW))
+    connection.commit()
+    connection.close()
+    print(f"User '{userN}' added successfully")
 
 #start server
 if __name__ == '__main__':
