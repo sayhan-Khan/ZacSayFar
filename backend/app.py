@@ -30,7 +30,7 @@ def get_foods():
     return jsonify(foods)
 
 def register(username,password):
-    connection = sqlite3.connect('users.db')
+    connection = sqlite3.connect('main.db')
     cursor = connection.cursor()
     cursor.execute("select * from users where username = ?", (username,))
     if cursor.fetchone():
@@ -43,7 +43,7 @@ def register(username,password):
     print("Registered successfully")
 
 def login(username,password):
-    connection = sqlite3.connect('users.db')
+    connection = sqlite3.connect('main.db')
     cursor = connection.cursor()
     cursor.execute("select * from users where username = ? and password=?", (username,password))
     if cursor.fetchone():
@@ -56,7 +56,7 @@ def deleteuser(adminusername,adminpassword,user):
     if adminusername!="admin":
         print("Only admin can delete users")
         return
-    connection=sqlite3.connect('users.db')
+    connection=sqlite3.connect('main.db')
     cursor=connection.cursor()
     cursor.execute("select * from users where username = ? and password=?", (adminusername,adminpassword))
     if not cursor.fetchone():
@@ -79,7 +79,7 @@ def adminadduser(adminusername,adminpassword,userN,userPW):
     if adminusername!="admin":
         print("Only admin can add users")
         return
-    connection=sqlite3.connect('users.db')
+    connection=sqlite3.connect('main.db')
     cursor=connection.cursor()
     cursor.execute("select * from users where username = ? and password=?", (adminusername,adminpassword))
     if not cursor.fetchone():
@@ -97,6 +97,106 @@ def adminadduser(adminusername,adminpassword,userN,userPW):
     connection.commit()
     connection.close()
     print(f"User '{userN}' added successfully")
+
+def addtostorage(username,foodname,quantity):
+    connection=sqlite3.connect('main.db')
+    cursor=connection.cursor()
+    cursor.execute("pragma foreign_keys=ON")
+
+    cursor.execute("select id from users where username = ?", (username,))
+    user_row=cursor.fetchone()
+    if not user_row:
+        print("User not found, can not add to storage")
+        connection.close()
+        return
+    userid=user_row[0]
+
+    cursor.execute("select id from foods where name = ?", (foodname,))
+    foodrow=cursor.fetchone()
+    if not foodrow:
+        print("Food not found, can not add to storage")
+        connection.close()
+        return
+    foodid=foodrow[0]
+    cursor.execute("""select quantity from userfoodstorage where user_id = ? and food_id = ?""",(userid,foodid))
+    existing=cursor.fetchone()
+    if existing:
+        newquantity=quantity+existing[0]
+        cursor.execute("""update userfoodstorage set quantity = ? where user_id = ? and food_id = ?""",(newquantity,userid,foodid))
+
+    else:
+        cursor.execute("insert into userfoodstorage  (user_id,food_id,quantity) values (?,?,?)",(userid,foodid,quantity))
+    connection.commit()
+    connection.close()
+
+def deletefromstorage(username,foodname,quantity):
+    connection=sqlite3.connect('main.db')
+    cursor=connection.cursor()
+    cursor.execute("pragma foreign_keys=ON")
+    connection = sqlite3.connect('main.db')
+    cursor = connection.cursor()
+    cursor.execute("pragma foreign_keys=ON")
+    cursor.execute("select id from users where username = ?", (username,))
+    user_row = cursor.fetchone()
+    if not user_row:
+        print("User not found,Can't delete from storage")
+        connection.close()
+        return
+    userid = user_row[0]
+
+    cursor.execute("select id from foods where name = ?", (foodname,))
+    foodrow = cursor.fetchone()
+    if not foodrow:
+        print("Food not found, Can't delete from storage")
+        connection.close()
+        return
+    foodid = foodrow[0]
+    cursor.execute("Select quantity from userfoodstorage where user_id = ? and food_id = ?", (userid, foodid))
+    existing = cursor.fetchone()
+    if existing:
+        if(quantity>existing[0]):
+            print("Error trying to delete more than whats in the storage")
+            connection.close()
+            return
+        newquantity=existing[0]-quantity
+        if newquantity > 0:
+            cursor.execute("""update userfoodstorage set quantity = ?where user_id = ?and food_id = ?""", (newquantity, userid, foodid))
+        else:
+            cursor.execute("delete from userfoodstorage where user_id=? and food_id=?",(userid,foodid)
+    )
+    connection.commit()
+    connection.close()
+
+def viewusertablestorage():
+    connection = sqlite3.connect('main.db')
+    cursor = connection.cursor()
+    cursor.execute("""Select users.username, foods.name,foods.calories,userfoodstorage.quantity
+    from userfoodstorage
+    join users on userfoodstorage.user_id = users.id
+    join foods on userfoodstorage.food_id = foods.id""")
+
+    userfoodstorage = cursor.fetchall()
+    for u in userfoodstorage:
+        print(u)
+    connection.close()
+
+def viewallfood():
+    connection = sqlite3.connect('main.db')
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM foods")
+    foods = cursor.fetchall()
+    for i in foods:
+        print(i)
+    connection.close()
+
+def viewallusers():
+    connection = sqlite3.connect('main.db')
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM users")
+    users = cursor.fetchall()
+    for i in users:
+        print(i)
+    connection.close()
 
 #start server
 if __name__ == '__main__':

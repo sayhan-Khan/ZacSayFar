@@ -34,4 +34,4 @@ while len(basicfood) < 214:
 
         page += 1
 #connection.commit()
-connection.close()
+#connection.close()

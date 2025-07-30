@@ -1,38 +1,26 @@
 #testing food database
 import sqlite3
-from app import register,login
-from backend.app import deleteuser,adminadduser
+from app import register,login,deleteuser, adminadduser, addtostorage, deletefromstorage, viewusertablestorage, viewallfood,viewallusers,viewallusers
 
-connection=sqlite3.connect('food.db')
-cursor=connection.cursor()
-cursor.execute("SELECT * FROM foods")
-
-foods=cursor.fetchall()
-# for i in foods:
-#     print(i)
-
-connection.close()
 
 #testing user table
-# register("Bob","password")
-# register("Bob","password")
-# register("Zachery","password")
-# login("Bob","password")
-# login("fake","password")
-# deleteuser("admin","admin","Bob")
-# login("Bob","password")
-# adminadduser("admin","admin","Bob","password")
-# login("Bob","password")
-# deleteuser("admin","admin","Bosdfsdb")
-# adminadduser("admin","admin","Bob","password")
-#
-# connection=sqlite3.connect('users.db')
-# cursor=connection.cursor()
-# cursor.execute("SELECT * FROM users")
-#
-# users=cursor.fetchall()
-# for u in users:
-#     print(u)
-
-connection.close()
-
+register("Bob","password")
+register("Bob","password")
+register("Zachery","password")
+login("Bob","password")
+login("fake","password")
+deleteuser("admin","admin","Bob")
+login("Bob","password")
+adminadduser("admin","admin","Bob","password")
+login("Bob","password")
+deleteuser("admin","admin","Bosdfsdb")
+adminadduser("admin","admin","Bob","password")
+addtostorage("Bob","Broccoli, raw",95)
+addtostorage("Bob","Broccoli, raw",95)
+addtostorage("Bob","Yogurt, Greek, plain, nonfat",95)
+deletefromstorage("Bob","Broccoli, raw",150)
+deletefromstorage("Bob","Broccoli, raw",150)
+addtostorage("Zachery","Broccoli, raw",95)
+deleteuser("admin","admin","Zachery")
+#viewallfood()
+viewusertablestorage()
