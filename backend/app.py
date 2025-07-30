@@ -201,7 +201,7 @@ def viewallusers():
 def getfoodbyusername(username):
     connection = sqlite3.connect('main.db')
     cursor = connection.cursor()
-    cursor.execute("""SELECT users.username, foods.name,foods.calories,userfoodstorage.quantity
+    cursor.execute("""SELECT foods.name,foods.calories,userfoodstorage.quantity
                    from userfoodstorage
                    join users on userfoodstorage.user_id = users.id
                     join foods on userfoodstorage.food_id = foods.id
