@@ -198,6 +198,18 @@ def viewallusers():
         print(i)
     connection.close()
 
+def getfoodbyusername(username):
+    connection = sqlite3.connect('main.db')
+    cursor = connection.cursor()
+    cursor.execute("""SELECT users.username, foods.name,foods.calories,userfoodstorage.quantity
+                   from userfoodstorage
+                   join users on userfoodstorage.user_id = users.id
+                    join foods on userfoodstorage.food_id = foods.id
+                   where users.username=?""", (username,))
+    users = cursor.fetchall()
+    for i in users:
+        print(i)
+
 #start server
 if __name__ == '__main__':
     app.run(debug=True)

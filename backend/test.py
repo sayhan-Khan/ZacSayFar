@@ -1,6 +1,6 @@
 #testing food database
 import sqlite3
-from app import register,login,deleteuser, adminadduser, addtostorage, deletefromstorage, viewusertablestorage, viewallfood,viewallusers,viewallusers
+from app import register,login,deleteuser, adminadduser, addtostorage, deletefromstorage, viewusertablestorage, viewallfood,viewallusers,viewallusers,getfoodbyusername
 
 
 #testing user table
@@ -21,6 +21,14 @@ addtostorage("Bob","Yogurt, Greek, plain, nonfat",95)
 deletefromstorage("Bob","Broccoli, raw",150)
 deletefromstorage("Bob","Broccoli, raw",150)
 addtostorage("Zachery","Broccoli, raw",95)
+print()
+viewusertablestorage()
+print()
+getfoodbyusername("Bob")
+print()
+getfoodbyusername("Zachery")
+print()
 deleteuser("admin","admin","Zachery")
+
 #viewallfood()
 viewusertablestorage()
