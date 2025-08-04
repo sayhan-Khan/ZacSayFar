@@ -61,12 +61,6 @@ A comprehensive web application designed to help college students track their da
    npm install
    ```
 
-3. **Set up Python environment (optional but recommended)**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
 ### Running the Application
 
 1. **Start the Backend Server**
