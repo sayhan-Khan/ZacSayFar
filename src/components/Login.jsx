@@ -36,7 +36,11 @@ function Login() {
       }
       
       // Redirect to dashboard
-      navigate('/dashboard');
+      if (email === 'admin@admin.com' && password === 'admin') {
+          navigate('/admin');
+      } else {
+         navigate('/dashboard');
+}
       
     } catch (error) {
       setError(error.message || 'Login failed');

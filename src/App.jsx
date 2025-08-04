@@ -5,6 +5,7 @@ import Dashboard from './components/Dashboard';
 import AddMealPage from './components/AddMealPage';
 import HistoryPage from './components/HistoryPage';
 import NutritionPage from './components/NutritionPage';
+import AdminPanel from './components/AdminPanel';
 
 function App() {
   return (
@@ -16,7 +17,8 @@ function App() {
         {/* Authentication routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
-        
+        <Route path="/admin" element={<AdminPanel />} />
+
         {/* Main app routes */}
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/add-meal" element={<AddMealPage />} />

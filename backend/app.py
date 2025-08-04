@@ -5,7 +5,7 @@ from flask_cors import CORS # acssess server
 import sqlite3
 
 app = Flask(__name__)
-CORS(app)  # allow React frontend to access Flask backend
+CORS(app, resources={r"/*": {"origins": "*"}})
 DATABASE = "foodbackcall.db"  # Use local database file
 MAIN_DATABASE = "main.db"     # User database
 
@@ -24,7 +24,7 @@ def get_main_db_connection():
 
 
 #API route
-@app.route('/foods', methods=['GET'])
+@app.route('/api/foods', methods=['GET'])
 def get_foods():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -69,6 +69,47 @@ def api_register():
     except Exception as e:
         return jsonify({'error': 'Registration failed'}), 500
 
+# API Endpoint for admin
+@app.route('/api/admin/add-user', methods=['POST'])
+def api_admin_add_user():
+    data = request.get_json()
+    adminusername = data.get('adminUsername')
+    adminpassword = data.get('adminPassword')
+    newUsername = data.get('newUsername')
+    newPassword = data.get('newPassword')
+    if not adminusername.startswith("admin") or adminpassword != "admin":
+        return jsonify({'error': 'Admin authentication failed'}), 403
+    connection = sqlite3.connect('main.db')
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = ?", (newUsername,))
+    if cursor.fetchone():
+        connection.close()
+        return jsonify({'error': 'Username already exists'}), 409
+    cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (newUsername, newPassword))
+    connection.commit()
+    connection.close()
+    return jsonify({'message': 'User added successfully'}), 201
+
+# API Endpoint Admin Delete 
+@app.route('/api/admin/delete-user', methods=['POST'])
+def api_admin_delete_user():
+    data = request.get_json()
+    adminusername = data.get('adminUsername')
+    adminpassword = data.get('adminPassword')
+    userToDelete = data.get('userToDelete')
+    if not adminusername.startswith("admin") or adminpassword != "admin":
+        return jsonify({'error': 'Admin authentication failed'}), 403
+    connection = sqlite3.connect('main.db')
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = ?", (userToDelete,))
+    if not cursor.fetchone():
+        connection.close()
+        return jsonify({'error': 'User does not exist'}), 404
+    cursor.execute("DELETE FROM users WHERE username = ?", (userToDelete,))
+    connection.commit()
+    connection.close()
+    return jsonify({'message': f'User {userToDelete} deleted successfully'}), 200
+
 #API endpoint for user login
 @app.route('/api/login', methods=['POST'])
 def api_login():
@@ -84,8 +125,12 @@ def api_login():
         connection = sqlite3.connect('main.db')
         cursor = connection.cursor()
         
+        if email.startswith("admin") and password == "admin":
+            return jsonify({'message': 'Admin login successful', 'user': {'email': email, 'isAdmin': True}}), 200
+
         cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (email, password))
         user = cursor.fetchone()
+
         connection.close()
         
         if user:
@@ -100,52 +145,51 @@ def api_login():
 @app.route('/api/add-meal', methods=['POST'])
 def api_add_meal():
     data = request.get_json()
-    
+
     if not data or 'email' not in data or 'foodName' not in data or 'quantity' not in data:
         return jsonify({'error': 'Email, food name, and quantity are required'}), 400
-    
+
     email = data['email']
     food_name = data['foodName']
     quantity = data['quantity']
-    
-    try:
-        connection = get_main_db_connection()
-        cursor = connection.cursor()
-        cursor.execute("pragma foreign_keys=ON")
 
-        # Get user ID
-        cursor.execute("select id from users where username = ?", (email,))
+    try:
+        conn = get_main_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+
+        # Get User ID
+        cursor.execute("SELECT id FROM users WHERE username = ?", (email,))
         user_row = cursor.fetchone()
         if not user_row:
-            connection.close()
+            conn.close()
             return jsonify({'error': 'User not found'}), 404
-        userid = user_row[0]
+        user_id = user_row['id']
 
-        # Get food ID
-        cursor.execute("select id from foods where name = ?", (food_name,))
-        foodrow = cursor.fetchone()
-        if not foodrow:
-            connection.close()
+        # Get Food ID
+        cursor.execute("SELECT id FROM foods WHERE name = ?", (food_name,))
+        food_row = cursor.fetchone()
+        if not food_row:
+            conn.close()
             return jsonify({'error': 'Food not found'}), 404
-        foodid = foodrow[0]
+        food_id = food_row['id']
 
-        # Check if food already exists in user storage
-        cursor.execute("select quantity from userfoodstorage where user_id = ? and food_id = ?", (userid, foodid))
+        # Check if entry exists in userfoodstorage
+        cursor.execute("SELECT quantity FROM userfoodstorage WHERE user_id = ? AND food_id = ?", (user_id, food_id))
         existing = cursor.fetchone()
-        
+
         if existing:
-            # Update existing quantity
-            newquantity = quantity + existing[0]
-            cursor.execute("update userfoodstorage set quantity = ? where user_id = ? and food_id = ?", (newquantity, userid, foodid))
+            # Update quantity
+            new_quantity = existing['quantity'] + quantity
+            cursor.execute("UPDATE userfoodstorage SET quantity = ? WHERE user_id = ? AND food_id = ?", (new_quantity, user_id, food_id))
         else:
-            # Insert new entry
-            cursor.execute("insert into userfoodstorage (user_id, food_id, quantity) values (?,?,?)", (userid, foodid, quantity))
-        
-        connection.commit()
-        connection.close()
-        
+            # Insert new record
+            cursor.execute("INSERT INTO userfoodstorage (user_id, food_id, quantity) VALUES (?, ?, ?)", (user_id, food_id, quantity))
+
+        conn.commit()
+        conn.close()
         return jsonify({'message': 'Meal added successfully'}), 201
-        
+
     except Exception as e:
         return jsonify({'error': f'Failed to add meal: {str(e)}'}), 500
 

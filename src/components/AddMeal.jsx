@@ -42,9 +42,10 @@ function AddMeal({ userEmail, onMealAdded }) {
   };
 
   const handleSubmit = async (e) => {
+    console.log("Add Meal button clicked");
     e.preventDefault();
     if (!selectedFood || !userEmail) return;
-
+    console.log("Calling addMeal with:", userEmail, selectedFood, quantity);
     setIsLoading(true);
     setError('');
 
@@ -54,6 +55,7 @@ function AddMeal({ userEmail, onMealAdded }) {
       setQuantity(1);
       setSearchTerm('');
       if (onMealAdded) onMealAdded();
+      window.location.reload();
     } catch (error) {
       setError(error.message || 'Failed to add meal');
     } finally {
@@ -137,7 +139,8 @@ function AddMeal({ userEmail, onMealAdded }) {
         </div>
 
         <button
-          type="submit"
+          type="button"
+          onClick={handleSubmit}
           disabled={isLoading || !selectedFood}
           className="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >

@@ -1,8 +1,8 @@
-// API configuration and utility functions
 const API_BASE_URL = 'http://localhost:5000/api';
 
 // Generic API call function
 async function apiCall(endpoint, options = {}) {
+  console.log(`API Call Triggered → ${endpoint}`, options);
   const url = `${API_BASE_URL}${endpoint}`;
   
   const defaultOptions = {
@@ -30,7 +30,6 @@ async function apiCall(endpoint, options = {}) {
 
 // Authentication API calls
 export const authAPI = {
-  // Login user
   login: async (email, password) => {
     return apiCall('/login', {
       method: 'POST',
@@ -38,7 +37,6 @@ export const authAPI = {
     });
   },
 
-  // Register new user
   register: async (userData) => {
     return apiCall('/register', {
       method: 'POST',
@@ -49,23 +47,12 @@ export const authAPI = {
 
 // Food API calls
 export const foodAPI = {
-  // Get all foods
   getAllFoods: async () => {
-    const url = 'http://localhost:5000/foods';
-    try {
-      const response = await fetch(url);
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch foods');
-      }
-      return data;
-    } catch (error) {
-      console.error('API call failed:', error);
-      throw error;
-    }
+    return apiCall('/foods', {
+      method: 'GET',
+    });
   },
 
-  // Add meal to user storage
   addMeal: async (email, foodName, quantity) => {
     return apiCall('/add-meal', {
       method: 'POST',
@@ -73,21 +60,27 @@ export const foodAPI = {
     });
   },
 
-  // Get user meals
   getUserMeals: async (email) => {
-    const url = `${API_BASE_URL}/user-meals?email=${encodeURIComponent(email)}`;
-    try {
-      const response = await fetch(url);
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch user meals');
-      }
-      return data;
-    } catch (error) {
-      console.error('API call failed:', error);
-      throw error;
-    }
+    return apiCall(`/user-meals?email=${encodeURIComponent(email)}`, {
+      method: 'GET',
+    });
   },
 };
 
-export default { authAPI, foodAPI };
+export const adminAPI = {
+  addUser: async (adminUsername, adminPassword, newUsername, newPassword) => {
+    return apiCall('/admin/add-user', {
+      method: 'POST',
+      body: JSON.stringify({ adminUsername, adminPassword, newUsername, newPassword }),
+    });
+  },
+
+  deleteUser: async (adminUsername, adminPassword, userToDelete) => {
+    return apiCall('/admin/delete-user', {
+      method: 'POST',
+      body: JSON.stringify({ adminUsername, adminPassword, userToDelete }),
+    });
+  },
+};
+
+export default { authAPI, foodAPI, adminAPI };
