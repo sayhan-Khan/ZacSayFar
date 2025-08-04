@@ -1,18 +1,25 @@
 #backend api, server for requests
 #tools
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS # acssess server
 import sqlite3
 
 app = Flask(__name__)
 CORS(app)  # allow React frontend to access Flask backend
-DATABASE = "/Users/sayhankhan/PycharmProjects/ZacSayFar/food.db"
+DATABASE = "foodbackcall.db"  # Use local database file
+MAIN_DATABASE = "main.db"     # User database
 
 
-#sql light connetction
+#sql light connection for food database
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row  #Collums by name
+    conn.row_factory = sqlite3.Row  #Columns by name
+    return conn
+
+#sql light connection for user database
+def get_main_db_connection():
+    conn = sqlite3.connect(MAIN_DATABASE)
+    conn.row_factory = sqlite3.Row  #Columns by name
     return conn
 
 
@@ -25,9 +32,151 @@ def get_foods():
     cursor.execute('SELECT * FROM foods')
     rows = cursor.fetchall()
     conn.close()
-    # Convert rows to directories
+    #convert rows to directories
     foods = [dict(row) for row in rows]
     return jsonify(foods)
+
+#this is the API endpoint for user registration
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    data = request.get_json()
+    
+    if not data or 'email' not in data or 'password' not in data:
+        return jsonify({'error': 'Email and password are required'}), 400
+    
+    email = data['email']
+    password = data['password']
+    first_name = data.get('firstName', '')
+    last_name = data.get('lastName', '')
+    
+    try:
+        connection = sqlite3.connect('main.db')
+        cursor = connection.cursor()
+        
+        #this checks if user already exists
+        cursor.execute("SELECT * FROM users WHERE username = ?", (email,))
+        if cursor.fetchone():
+            connection.close()
+            return jsonify({'error': 'User already exists'}), 409
+        
+        #making a new user
+        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (email, password))
+        connection.commit()
+        connection.close()
+        
+        return jsonify({'message': 'User registered successfully'}), 201
+        
+    except Exception as e:
+        return jsonify({'error': 'Registration failed'}), 500
+
+#API endpoint for user login
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.get_json()
+    
+    if not data or 'email' not in data or 'password' not in data:
+        return jsonify({'error': 'Email and password are required'}), 400
+    
+    email = data['email']
+    password = data['password']
+    
+    try:
+        connection = sqlite3.connect('main.db')
+        cursor = connection.cursor()
+        
+        cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (email, password))
+        user = cursor.fetchone()
+        connection.close()
+        
+        if user:
+            return jsonify({'message': 'Login successful', 'user': {'email': email}}), 200
+        else:
+            return jsonify({'error': 'Invalid credentials'}), 401
+            
+    except Exception as e:
+            return jsonify({'error': 'Login failed'}), 500
+
+# API endpoint for adding food to user storage
+@app.route('/api/add-meal', methods=['POST'])
+def api_add_meal():
+    data = request.get_json()
+    
+    if not data or 'email' not in data or 'foodName' not in data or 'quantity' not in data:
+        return jsonify({'error': 'Email, food name, and quantity are required'}), 400
+    
+    email = data['email']
+    food_name = data['foodName']
+    quantity = data['quantity']
+    
+    try:
+        connection = get_main_db_connection()
+        cursor = connection.cursor()
+        cursor.execute("pragma foreign_keys=ON")
+
+        # Get user ID
+        cursor.execute("select id from users where username = ?", (email,))
+        user_row = cursor.fetchone()
+        if not user_row:
+            connection.close()
+            return jsonify({'error': 'User not found'}), 404
+        userid = user_row[0]
+
+        # Get food ID
+        cursor.execute("select id from foods where name = ?", (food_name,))
+        foodrow = cursor.fetchone()
+        if not foodrow:
+            connection.close()
+            return jsonify({'error': 'Food not found'}), 404
+        foodid = foodrow[0]
+
+        # Check if food already exists in user storage
+        cursor.execute("select quantity from userfoodstorage where user_id = ? and food_id = ?", (userid, foodid))
+        existing = cursor.fetchone()
+        
+        if existing:
+            # Update existing quantity
+            newquantity = quantity + existing[0]
+            cursor.execute("update userfoodstorage set quantity = ? where user_id = ? and food_id = ?", (newquantity, userid, foodid))
+        else:
+            # Insert new entry
+            cursor.execute("insert into userfoodstorage (user_id, food_id, quantity) values (?,?,?)", (userid, foodid, quantity))
+        
+        connection.commit()
+        connection.close()
+        
+        return jsonify({'message': 'Meal added successfully'}), 201
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to add meal: {str(e)}'}), 500
+
+# API endpoint for getting user meals
+@app.route('/api/user-meals', methods=['GET'])
+def api_get_user_meals():
+    email = request.args.get('email')
+    
+    if not email:
+        return jsonify({'error': 'Email parameter is required'}), 400
+    
+    try:
+        connection = get_main_db_connection()
+        cursor = connection.cursor()
+        
+        cursor.execute("""
+            SELECT foods.name, foods.calories, userfoodstorage.quantity
+            FROM userfoodstorage
+            JOIN users on userfoodstorage.user_id = users.id
+            JOIN foods on userfoodstorage.food_id = foods.id
+            WHERE users.username = ?
+        """, (email,))
+        
+        rows = cursor.fetchall()
+        connection.close()
+        
+        meals = [dict(row) for row in rows]
+        return jsonify(meals), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to get meals: {str(e)}'}), 500
 
 def register(username,password):
     connection = sqlite3.connect('main.db')
