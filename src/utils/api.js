@@ -81,6 +81,12 @@ export const adminAPI = {
       body: JSON.stringify({ adminUsername, adminPassword, userToDelete }),
     });
   },
+
+  getAllUsers: async (adminUsername, adminPassword) => {
+    return apiCall(`/admin/users?adminUsername=${encodeURIComponent(adminUsername)}&adminPassword=${encodeURIComponent(adminPassword)}`, {
+      method: 'GET',
+    });
+  },
 };
 
 export default { authAPI, foodAPI, adminAPI };

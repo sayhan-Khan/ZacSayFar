@@ -222,6 +222,31 @@ def api_get_user_meals():
     except Exception as e:
         return jsonify({'error': f'Failed to get meals: {str(e)}'}), 500
 
+#The API endpoint for getting all users (admin only)
+@app.route('/api/admin/users', methods=['GET'])
+def api_get_all_users():
+    admin_username = request.args.get('adminUsername')
+    admin_password = request.args.get('adminPassword')
+    
+    if not admin_username or not admin_password:
+        return jsonify({'error': 'Admin credentials required'}), 400
+    
+    if not admin_username.startswith("admin") or admin_password != "admin":
+        return jsonify({'error': 'Admin authentication failed'}), 403
+    
+    try:
+        connection = get_main_db_connection()
+        cursor = connection.cursor()
+        cursor.execute("SELECT id, username FROM users")
+        rows = cursor.fetchall()
+        connection.close()
+        
+        users = [dict(row) for row in rows]
+        return jsonify(users), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to get users: {str(e)}'}), 500
+
 def register(username,password):
     connection = sqlite3.connect('main.db')
     cursor = connection.cursor()

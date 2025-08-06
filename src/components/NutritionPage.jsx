@@ -65,6 +65,11 @@ function NutritionPage() {
               <Link to="/add-meal" className="text-gray-300 hover:text-white">Add Meal</Link>
               <Link to="/history" className="text-gray-300 hover:text-white">History</Link>
               <Link to="/nutrition" className="text-emerald-400 font-medium">Nutrition</Link>
+              {user?.isAdmin && (
+                <Link to="/admin" className="text-yellow-400 hover:text-yellow-300 font-medium">
+                  Admin Panel
+                </Link>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-4">

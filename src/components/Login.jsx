@@ -30,17 +30,20 @@ function Login() {
       const response = await authAPI.login(formData.email, formData.password);
       console.log('Login successful:', response);
       
-      // Store user info if needed
+      // Always store user info for session management
+      localStorage.setItem('user', JSON.stringify(response.user));
+      
+      // Store persistent session only if remember me is checked
       if (formData.rememberMe) {
-        localStorage.setItem('user', JSON.stringify(response.user));
+        localStorage.setItem('persistentUser', JSON.stringify(response.user));
       }
       
-      // Redirect to dashboard
-      if (email === 'admin@admin.com' && password === 'admin') {
+      // Redirect based on user type
+      if (formData.email === 'admin@admin.com' && formData.password === 'admin') {
           navigate('/admin');
       } else {
          navigate('/dashboard');
-}
+      }
       
     } catch (error) {
       setError(error.message || 'Login failed');
